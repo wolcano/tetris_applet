@@ -171,7 +171,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 				padaju.add(k);
 			}
 		}
-		//debug = zije + " " + padaju.size();
+		debug = zije + " " + padaju.size();
 
 		// nemozu padnut vsetky
 		if (zije > padaju.size()) {
@@ -196,6 +196,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 			return 0;
 		}
 		int r = rand.nextInt(nasyp) + 1;
+		Color c = new Color(rand.nextFloat(255),rand.nextFloat(255),rand.nextFloat(255));
 		nasyp -= r;
 
 		int minx = w / 2;
@@ -221,7 +222,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 			k = new kocka();
 			k.x = rr + i;
 			k.y = h - 1;
-			k.color = Color.green;
+			k.color = c;
 			k.speed = speed;
 			kocky.add(k);
 		}
