@@ -26,7 +26,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 	int sq_w = 10; // velkost kocky
 	int w = 10;
-	int h = 40;
+	int h = 10;
 	int cnv_x = 140;
 	int cnv_y = 40;
 	int cnv_h = sq_w * h; // vyska hracej plochy
@@ -39,7 +39,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 	int q = 0;
 	char kc = ' ';
-
+	String debug;
 
 	public void init()
 	{
@@ -48,6 +48,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		kocky = null;
 		tick = new Timer(0, null);
 		rand = new Random();
+		debug = new String();
 
 		dbg     = new Label("debug info");
 		skore_d = new Label("SKORE");
@@ -57,7 +58,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 		start   = new Button("START");
 
-		dbg.setBounds(    20,  0, 100, 20);
+		dbg.setBounds(    20,  0, 800, 20);
 		skore_d.setBounds(20, 20, 100, 20);
 		skore.setBounds(  20, 40, 100, 20);
 		level_d.setBounds(20, 60, 100, 20);
@@ -82,7 +83,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 	private void reset() {
 		start.setVisible(true);
 		skore.setText("0");
-		level.setText("1");
+		level.setText("5");
 		tick.stop();
 		kocky = new ArrayList<kocka>();
 	}
@@ -90,20 +91,29 @@ public class tetris extends Applet implements KeyListener, ActionListener
 	private void startGame() {
 		start.setVisible(false);
 		tick.stop();
-		//tick.setDelay(tick_len / Integer.parseInt(level.toString()));
-		tick.setDelay(tick_len);
+		tick.setDelay(2 * tick_len / Integer.parseInt(level.getText()));
+		tick.setInitialDelay(tick.getDelay());
+		//tick.setDelay(tick_len);
 		tick.start();
 		status = 1;
 		nasyp = kociek_na_item;
+		debug = "startGame";
 		stepGame();
+	}
+
+	private void stopGame() {
+		start.setVisible(true);
+		tick.stop();
+		status = 0;
+		debug = "stopGame";
 		repaint();
 	}
 
-	private int pocetZijucichKociek(ArrayList<kocka> k) {
+	private int pocetZijucichKociek() {
 		int cnt = 0;
 
-		for (kocka i : k) {
-			if (i.speed > 0) {
+		for (kocka k : kocky) {
+			if (k.speed > 0) {
 				cnt = cnt + 1;
 			}
 		}
@@ -121,44 +131,72 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		return true;
 	}
 
-	private boolean padniKocky(ArrayList<kocka> kk) {
-		int zije = pocetZijucichKociek(kk);
-		if (zije <= 0) {
-			return false;
-		}
-
-		ArrayList<kocka> padaju = new ArrayList<kocka>();
-		int padne = 0;
-		for (kocka k : kk) {
-			if (maPrazdnoPodSebou(k)) {
-				padne = padne + 1;
-				if (zije > padne) {
-					break;
+	private void vybuchniRiadky() {
+		return;
+		/*
+		int cnt;
+		for (int i = 0; i < h; ) {
+			cnt = 0;
+			for (kocka k : kocky) {
+				if (k.y == i) {
+					cnt++;
 				}
+			}
+			if (cnt == w) {
+				for (kocka k : kocky) {
+					if (k.y == i) {
+						k.status = 1;
+					}
+				}
+			}
+			else {
+				i++;
+			}
+		}
+		// mame vsetky, nechame ich s efektom vybuchnut
+		for (kocka k : kocky) {
+			if (k.status == 1) {
+				kocky.remove(k);
+			}
+		}
+		*/
+	}
+
+	private boolean padniKocky() {
+		int zije = pocetZijucichKociek();
+		ArrayList<kocka> padaju = new ArrayList<kocka>();
+
+		for (kocka k : kocky) {
+			if (maPrazdnoPodSebou(k)) {
 				padaju.add(k);
 			}
 		}
+		//debug = zije + " " + padaju.size();
 
-		if (zije > padne) {
-			for (kocka k : kk) {
+		// nemozu padnut vsetky
+		if (zije > padaju.size()) {
+			for (kocka k : kocky) {
 				if (k.speed > 0) {
 					k.speed = 0;
 				}
 			}
+			vybuchniRiadky();
+
+			return false;
 		}
-		else {
-			for (kocka k : padaju) {
-				k.y = k.y - 1;
-			}
+
+		for (kocka k : padaju) {
+			k.y = k.y - 1;
 		}
 		return true;
 	}
 
-	private boolean nasypNoveKocky(int speed) {
+	private int nasypNoveKocky(int speed) {
 		if (nasyp <= 0) {
-			return true; // ???
+			return 0;
 		}
 		int r = rand.nextInt(nasyp) + 1;
+		nasyp -= r;
 
 		int minx = w / 2;
 		int maxx = minx + 1;
@@ -177,30 +215,41 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		}
 
 		kocka k;
+		int rr = minx - r + 1 + rand.nextInt(maxx - minx) + 1;
 		// nasypavam r-suvisly blok kociek tak aby sa dotykal bloku [minx..maxx]
-		for (int i = minx - r + 1 + rand.nextInt(maxx) + 1; i < r; i++) {
+		for (int i = 0; i < r; i++) {
 			k = new kocka();
-			k.x = i;
-			k.y = h;
+			k.x = rr + i;
+			k.y = h - 1;
 			k.color = Color.green;
 			k.speed = speed;
 			kocky.add(k);
 		}
-		return true;
+		debug = "nasypNK "+rr+"+"+r+"_["+minx+","+maxx+"]";
+
+		return r;
 	}
 
 	private void stepGame() {
 		q = q + 1;
-		int speed = Integer.parseInt(level.toString());
+		int speed = 0;
+		try {
+			speed = Integer.parseInt(level.getText());
+		}
+		catch(Exception e) {
+		}
 
-		if (pocetZijucichKociek(kocky) == 0) {
+		int zije = pocetZijucichKociek();
+		if (zije == 0) {
 			nasyp = kociek_na_item;
 		}
-
-		if (!padniKocky(kocky)) {
+		if (nasyp > 0) {
 			nasypNoveKocky(speed);
 		}
-
+		if (!padniKocky()) {
+			//stopGame();
+		}
+		//debug = "stepGame " + nasyp;
 
 		repaint();
 	}
@@ -212,7 +261,11 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		g.setColor (Color.red);
 		g.draw(new Rectangle(cnv_x, cnv_y, cnv_w, cnv_h));
 
-		dbg.setText("tick! " + q + " " + tick.getDelay() + " " + kc);
+		for (kocka k : kocky) {
+			k.draw(g);
+		}
+
+		dbg.setText("tick! " + q + " " + tick.getDelay() + " key:" + kc + " k:" + pocetZijucichKociek() + "/" + kocky.size() + " " + debug);
 	}
 
 	public void keyReleased(KeyEvent evt) {
@@ -231,11 +284,14 @@ public class tetris extends Applet implements KeyListener, ActionListener
 	public void actionPerformed(ActionEvent evt)
 	{
 		Object src = evt.getSource();
+
 		if (src == start) {
 			startGame();
 		}
 		else if (src == tick) {
+			//tick.stop();
 			stepGame();
+			//tick.start();
 		}
 	}
 
@@ -243,10 +299,11 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		int x;
 		int y;
 		int speed;
+		int status;
 		Color color;
 
 		public void draw(Graphics2D g) {
-			Rectangle r = new Rectangle(cnv_x + x*sq_w, cnv_y + y*sq_w, sq_w, sq_w);
+			Rectangle r = new Rectangle(cnv_x + x*sq_w, cnv_y + (h - y - 1) * sq_w, sq_w, sq_w);
 			g.setColor(color);
 			g.fill(r);
 			g.setColor(Color.black);
