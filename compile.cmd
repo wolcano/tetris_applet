@@ -4,3 +4,5 @@
 @echo Kompilujem...
 javac -Xlint:deprecation *.java >vyrob_class.log 2>&1
 
+taskkill /F /FI "MODULES eq npjp2.dll"
+
