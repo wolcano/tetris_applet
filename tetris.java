@@ -233,7 +233,6 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 	private int nasypNoveKocky(int speed) {
 		int r = rand.nextInt(nasyp) + 1;
-		Color c = new Color(rand.nextFloat(255),rand.nextFloat(255),rand.nextFloat(255));
 		nasyp -= r;
 
 		int minx = -1;
@@ -339,6 +338,9 @@ public class tetris extends Applet implements KeyListener, ActionListener
 	}
 
 	public void keyTyped(KeyEvent evt) {
+		if (status != 1) {
+			return;
+		}
 		kc = evt.getKeyChar();
 		switch (kc) {
 			case 'a':
