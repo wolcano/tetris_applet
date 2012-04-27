@@ -33,12 +33,12 @@ public class tetris extends Applet implements KeyListener, ActionListener
 	int cnv_w = sq_w * w; // sirka hracej plochy
 
 	int tick_len = 1000;
-	int kociek_na_item = 2;
+	int kociek_na_item = 1;
 	int nasyp = 0;
 	Color new_color;
 	int status = 0; // stav behu 0 - STOP; 1 - RUN
+	boolean suvisle_kocky = false;
 
-	int q = 0;
 	char kc = ' ';
 	String debug;
 
@@ -86,6 +86,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		skore.setText("0");
 		level.setText("5");
 		tick.stop();
+		new_color = new Color(rand.nextInt(255),rand.nextInt(255), rand.nextInt(255));
 		kocky = new ArrayList<Kocka>();
 	}
 
@@ -100,46 +101,53 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		nasyp = kociek_na_item;
 		debug = "startGame";
 
-		// DEBUG XXX
-		nasyp = 4;
-		kocky.add(new Kocka(6, h - 1, 1, 1, Color.green));
-
+		for (int i = 0; i < w - 1; i++) {
+			kocky.add(new Kocka(i, 0, 0, 0, new_color));
+		}
 		stepGame();
+		//stepGame();
+		//stopGame();
 	}
 
 	private void stopGame() {
 		//start.setVisible(true);
 		tick.stop();
 		status = 2;
-		//debug = "stopGame";
 		repaint();
+	}
+
+	private boolean jePadajuca(Kocka k) {
+		return (k != null && k.speed > 0);
 	}
 
 	private int pocetZijucichKociek() {
 		int cnt = 0;
 
 		for (Kocka k : kocky) {
-			if (k.speed > 0) {
+			if (jePadajuca(k)) {
 				cnt = cnt + 1;
 			}
 		}
 		return cnt;
 	}
 
-	private boolean maPrazdnoPodSebou(Kocka pk) {
-		if (pk.y <= 0) {
+	private boolean maPrazdno(Kocka pk, int dx, int dy) {
+		if (pk.y + dy < 0
+				|| pk.y + dy >= h
+				|| pk.x + dx < 0
+				|| pk.x + dx >= w) {
 			return false;
 		}
 		for (Kocka k : kocky) {
-			if (pk.x == k.x && pk.y - 1 == k.y)
+			if ((pk.x + dx) == k.x
+					&& (pk.y + dy) == k.y
+					&& k.speed == 0)
 				return false;
 		}
 		return true;
 	}
 
 	private void vybuchniRiadky() {
-		return;
-		/*
 		int cnt;
 		for (int i = 0; i < h; ) {
 			cnt = 0;
@@ -151,7 +159,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 			if (cnt == w) {
 				for (Kocka k : kocky) {
 					if (k.y == i) {
-						k.status = 1;
+						k.status = 2;
 					}
 				}
 			}
@@ -161,70 +169,85 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		}
 		// mame vsetky, nechame ich s efektom vybuchnut
 		for (Kocka k : kocky) {
-			if (k.status == 1) {
+			if (k.status == 2) {
 				kocky.remove(k);
 			}
+			else {
+				k.speed = 1;
+			}
 		}
-		*/
+		while (padniKocky())
+			;
+	}
+
+	private boolean posunPadajuce(int dx, int dy) {
+		int cnt = 0;
+		ArrayList<Kocka> padaju = new ArrayList<Kocka>();
+		for (Kocka k : kocky) {
+			if (jePadajuca(k)) {
+				if (maPrazdno(k, dx, dy)) {
+					padaju.add(k);
+					cnt++;
+				}
+				else {
+					return false;
+				}
+			}
+		}
+
+		for (Kocka k : padaju) {
+			k.x += dx;
+			k.y += dy;
+		}
+
+		return (cnt > 0);
+	}
+
+	private boolean rotujPadajuce() {
+		return false;
 	}
 
 	private boolean padniKocky() {
-		int zije = pocetZijucichKociek();
-		ArrayList<Kocka> padaju = new ArrayList<Kocka>();
-
-		for (Kocka k : kocky) {
-			if (maPrazdnoPodSebou(k)) {
-				padaju.add(k);
-			}
-		}
-		//debug = zije + " " + padaju.size();
-
-		// nemozu padnut vsetky
-		if (zije > padaju.size()) {
+		if (!posunPadajuce(0, -1)) {
+			// ak nemohli padnut, tak ich zastav
 			for (Kocka k : kocky) {
 				if (k.speed > 0) {
 					k.speed = 0;
 				}
 			}
-			vybuchniRiadky();
-
-			debug = debug + " nepadli";
-
 			return false;
 		}
-
-		for (Kocka k : padaju) {
-			k.y = k.y - 1;
-		}
-			debug = debug + " padli";
 		return true;
 	}
 
 	private int nasypNoveKocky(int speed) {
-		if (nasyp <= 0) {
-			return 0;
-		}
 		int r = rand.nextInt(nasyp) + 1;
 		nasyp -= r;
 
 		int minx = -1;
 		int maxx = -1;
 
-		// najdem prvu a poslednu aktivnu kocku v -1 riadku
-		// predpokladam, ze kocky uz o jeden riadok padli
-		for (Kocka k : kocky) {
-			if (k.y == h - 1 && k.speed > 0) {
-				if (maxx == -1 || k.x > maxx) {
-					maxx = k.x;
-				}
-				if (minx == -1 || k.x < minx) {
-					minx = k.x;
+		if (suvisle_kocky) {
+			// najdem prvu a poslednu aktivnu kocku v -1 riadku
+			// predpokladam, ze kocky uz o jeden riadok padli
+			for (Kocka k : kocky) {
+				if (k.y == h - 1 && k.speed > 0) {
+					if (maxx == -1 || k.x > maxx) {
+						maxx = k.x;
+					}
+					if (minx == -1 || k.x < minx) {
+						minx = k.x;
+					}
 				}
 			}
+			if (minx == -1 || maxx == -1) {
+				minx = w / 2;
+				maxx = minx + 1;
+			}
 		}
-		if (minx == -1 || maxx == -1) {
-			minx = w / 2;
-			maxx = minx + 1;
+		else {
+			minx = 0;
+			maxx = w - 1;
 		}
 
 		int rr = 0;
@@ -238,6 +261,14 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		if (rr > w - r) {
 			rr = w - r;
 		}
+		// najprv sa pozrieme, ci nam tam nezavadzia nejaka kocka
+		for (int i = 0; i < r; i++) {
+			for (Kocka k : kocky) {
+				if (k.x == rr + i && k.y == h) {
+					return 0;
+				}
+			}
+		}
 		// nasypavam r-suvisly blok kociek tak aby sa dotykal bloku [minx..maxx]
 		for (int i = 0; i < r; i++) {
 			kocky.add(new Kocka(rr + i, h, speed, 1, new_color));
@@ -247,36 +278,32 @@ public class tetris extends Applet implements KeyListener, ActionListener
 	}
 
 	private void stepGame() {
-		q = q + 1;
-		if (q > 30) {
-			stopGame();
-			return;
-		}
 		int speed = 0;
 		try {
 			speed = Integer.parseInt(level.getText());
 		}
 		catch(Exception e) {
 		}
-		debug = "stepGame2 ";
 
 		int zije = pocetZijucichKociek();
-		debug = "stepGame3 "+zije;
 		if (zije == 0) {
 			nasyp = kociek_na_item;
 			new_color = new Color(rand.nextInt(255),rand.nextInt(255), rand.nextInt(255));
 		}
-		debug += " stepGame4 "+zije;
 		if (nasyp > 0) {
-			nasypNoveKocky(speed);
+			if (nasypNoveKocky(speed) == 0) {
+				// nepodarilo sa nasypat
+				stopGame();
+				return;
+			}
 		}
-		debug += " stepGame5 "+zije;
 		if (!padniKocky()) {
+			// padanie zastalo, skontroluj, ci nema nieco vybuchnut
+			vybuchniRiadky();
 		}
-		debug += " stepGame6 " + nasyp;
 
 		repaint();
-		stopGame();
+		//stopGame();
 	}
 
 	public void paint (Graphics gX)
@@ -290,18 +317,35 @@ public class tetris extends Applet implements KeyListener, ActionListener
 			k.draw(g);
 		}
 
-		dbg.setText("tick! " + q + " " + tick.getDelay() + " key:" + kc + " k:" + pocetZijucichKociek() + "/" + kocky.size() + " " + debug);
+		dbg.setText("tick! " + " k:" + pocetZijucichKociek() + "/" + kocky.size() + " " + debug);
 	}
 
 	public void keyReleased(KeyEvent evt) {
 	}
 
 	public void keyPressed(KeyEvent evt) {
-		keyTyped(evt);
 	}
 
 	public void keyTyped(KeyEvent evt) {
 		kc = evt.getKeyChar();
+		switch (kc) {
+			case 'a':
+				posunPadajuce(-1, 0);
+				break;
+			case 'd':
+				posunPadajuce(1, 0);
+				break;
+			case 's':
+				stepGame();
+				break;
+			case 'q':
+				stopGame();
+				break;
+			case ' ':
+				rotujPadajuce();
+				break;
+		}
+
 		repaint();
 	}
 
