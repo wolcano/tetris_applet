@@ -11,7 +11,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 	static final long serialVersionUID = 1L;
 
-	ArrayList<kocka> kocky;
+	ArrayList<Kocka> kocky;
 
 	Label skore;
 	Label skore_d;
@@ -33,8 +33,9 @@ public class tetris extends Applet implements KeyListener, ActionListener
 	int cnv_w = sq_w * w; // sirka hracej plochy
 
 	int tick_len = 1000;
-	int kociek_na_item = 4;
+	int kociek_na_item = 2;
 	int nasyp = 0;
+	Color new_color;
 	int status = 0; // stav behu 0 - STOP; 1 - RUN
 
 	int q = 0;
@@ -85,7 +86,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		skore.setText("0");
 		level.setText("5");
 		tick.stop();
-		kocky = new ArrayList<kocka>();
+		kocky = new ArrayList<Kocka>();
 	}
 
 	private void startGame() {
@@ -98,21 +99,26 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		status = 1;
 		nasyp = kociek_na_item;
 		debug = "startGame";
+
+		// DEBUG XXX
+		nasyp = 4;
+		kocky.add(new Kocka(6, h - 1, 1, 1, Color.green));
+
 		stepGame();
 	}
 
 	private void stopGame() {
-		start.setVisible(true);
+		//start.setVisible(true);
 		tick.stop();
-		status = 0;
-		debug = "stopGame";
+		status = 2;
+		//debug = "stopGame";
 		repaint();
 	}
 
 	private int pocetZijucichKociek() {
 		int cnt = 0;
 
-		for (kocka k : kocky) {
+		for (Kocka k : kocky) {
 			if (k.speed > 0) {
 				cnt = cnt + 1;
 			}
@@ -120,11 +126,11 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		return cnt;
 	}
 
-	private boolean maPrazdnoPodSebou(kocka pk) {
+	private boolean maPrazdnoPodSebou(Kocka pk) {
 		if (pk.y <= 0) {
 			return false;
 		}
-		for (kocka k : kocky) {
+		for (Kocka k : kocky) {
 			if (pk.x == k.x && pk.y - 1 == k.y)
 				return false;
 		}
@@ -137,13 +143,13 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		int cnt;
 		for (int i = 0; i < h; ) {
 			cnt = 0;
-			for (kocka k : kocky) {
+			for (Kocka k : kocky) {
 				if (k.y == i) {
 					cnt++;
 				}
 			}
 			if (cnt == w) {
-				for (kocka k : kocky) {
+				for (Kocka k : kocky) {
 					if (k.y == i) {
 						k.status = 1;
 					}
@@ -154,7 +160,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 			}
 		}
 		// mame vsetky, nechame ich s efektom vybuchnut
-		for (kocka k : kocky) {
+		for (Kocka k : kocky) {
 			if (k.status == 1) {
 				kocky.remove(k);
 			}
@@ -164,9 +170,9 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 	private boolean padniKocky() {
 		int zije = pocetZijucichKociek();
-		ArrayList<kocka> padaju = new ArrayList<kocka>();
+		ArrayList<Kocka> padaju = new ArrayList<Kocka>();
 
-		for (kocka k : kocky) {
+		for (Kocka k : kocky) {
 			if (maPrazdnoPodSebou(k)) {
 				padaju.add(k);
 			}
@@ -175,19 +181,22 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 		// nemozu padnut vsetky
 		if (zije > padaju.size()) {
-			for (kocka k : kocky) {
+			for (Kocka k : kocky) {
 				if (k.speed > 0) {
 					k.speed = 0;
 				}
 			}
 			vybuchniRiadky();
 
+			debug = debug + " nepadli";
+
 			return false;
 		}
 
-		for (kocka k : padaju) {
+		for (Kocka k : padaju) {
 			k.y = k.y - 1;
 		}
+			debug = debug + " padli";
 		return true;
 	}
 
@@ -198,60 +207,76 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		int r = rand.nextInt(nasyp) + 1;
 		nasyp -= r;
 
-		int minx = w / 2;
-		int maxx = minx + 1;
+		int minx = -1;
+		int maxx = -1;
 
 		// najdem prvu a poslednu aktivnu kocku v -1 riadku
 		// predpokladam, ze kocky uz o jeden riadok padli
-		for (kocka k : kocky) {
+		for (Kocka k : kocky) {
 			if (k.y == h - 1 && k.speed > 0) {
-				if (k.x > maxx) {
+				if (maxx == -1 || k.x > maxx) {
 					maxx = k.x;
 				}
-				if (k.x < minx) {
+				if (minx == -1 || k.x < minx) {
 					minx = k.x;
 				}
 			}
 		}
+		if (minx == -1 || maxx == -1) {
+			minx = w / 2;
+			maxx = minx + 1;
+		}
 
-		kocka k;
-		int rr = minx - r + 1 + rand.nextInt(maxx - minx) + 1;
+		int rr = 0;
+		if (maxx > minx) {
+			rr += rand.nextInt(maxx - minx) + 1;
+		}
+		rr += minx - r + 1 + rand.nextInt(r);
+		if (rr < 0) {
+			rr = 0;
+		}
+		if (rr > w - r) {
+			rr = w - r;
+		}
 		// nasypavam r-suvisly blok kociek tak aby sa dotykal bloku [minx..maxx]
 		for (int i = 0; i < r; i++) {
-			k = new kocka();
-			k.x = rr + i;
-			k.y = h - 1;
-			k.color = Color.green;
-			k.speed = speed;
-			kocky.add(k);
+			kocky.add(new Kocka(rr + i, h, speed, 1, new_color));
 		}
-		debug = "nasypNK "+rr+"+"+r+"_["+minx+","+maxx+"]";
 
 		return r;
 	}
 
 	private void stepGame() {
 		q = q + 1;
+		if (q > 30) {
+			stopGame();
+			return;
+		}
 		int speed = 0;
 		try {
 			speed = Integer.parseInt(level.getText());
 		}
 		catch(Exception e) {
 		}
+		debug = "stepGame2 ";
 
 		int zije = pocetZijucichKociek();
+		debug = "stepGame3 "+zije;
 		if (zije == 0) {
 			nasyp = kociek_na_item;
+			new_color = new Color(rand.nextInt(255),rand.nextInt(255), rand.nextInt(255));
 		}
+		debug += " stepGame4 "+zije;
 		if (nasyp > 0) {
 			nasypNoveKocky(speed);
 		}
+		debug += " stepGame5 "+zije;
 		if (!padniKocky()) {
-			//stopGame();
 		}
-		//debug = "stepGame " + nasyp;
+		debug += " stepGame6 " + nasyp;
 
 		repaint();
+		stopGame();
 	}
 
 	public void paint (Graphics gX)
@@ -261,7 +286,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		g.setColor (Color.red);
 		g.draw(new Rectangle(cnv_x, cnv_y, cnv_w, cnv_h));
 
-		for (kocka k : kocky) {
+		for (Kocka k : kocky) {
 			k.draw(g);
 		}
 
@@ -295,7 +320,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		}
 	}
 
-	class kocka {
+	class Kocka {
 		int x;
 		int y;
 		int speed;
@@ -308,6 +333,17 @@ public class tetris extends Applet implements KeyListener, ActionListener
 			g.fill(r);
 			g.setColor(Color.black);
 			g.draw(r);
+		}
+
+		public Kocka() {
+		}
+
+		public Kocka(int px, int py, int pspeed, int pstatus, Color pcolor) {
+			x = px;
+			y = py;
+			speed = pspeed;
+			status = pstatus;
+			color = pcolor;
 		}
 	}
 
