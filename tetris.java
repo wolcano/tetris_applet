@@ -31,13 +31,13 @@ public class tetris extends Applet implements KeyListener, ActionListener
 	int cnv_y = 40;
 	int cnv_h = sq_w * h; // vyska hracej plochy
 	int cnv_w = sq_w * w; // sirka hracej plochy
+	Color new_color;
+	int nasyp = 0;
+	int status = 0; // stav behu 0 - STOP; 1 - RUN
 
 	int tick_len = 1000;
-	int kociek_na_item = 1;
-	int nasyp = 0;
-	Color new_color;
-	int status = 0; // stav behu 0 - STOP; 1 - RUN
-	boolean suvisle_kocky = false;
+	int kociek_na_item = 4;
+	boolean suvisle_kocky = true;
 
 	char kc = ' ';
 	String debug;
@@ -101,9 +101,11 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		nasyp = kociek_na_item;
 		debug = "startGame";
 
+		/* // XXX
 		for (int i = 0; i < w - 1; i++) {
 			kocky.add(new Kocka(i, 0, 0, 0, new_color));
 		}
+		*/
 		stepGame();
 		//stepGame();
 		//stopGame();
@@ -149,7 +151,8 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 	private void vybuchniRiadky() {
 		int cnt;
-		for (int i = 0; i < h; ) {
+		ArrayList<Kocka> zmazat = new ArrayList<Kocka>();
+		for (int i = 0; i < h; i++) {
 			cnt = 0;
 			for (Kocka k : kocky) {
 				if (k.y == i) {
@@ -159,25 +162,33 @@ public class tetris extends Applet implements KeyListener, ActionListener
 			if (cnt == w) {
 				for (Kocka k : kocky) {
 					if (k.y == i) {
-						k.status = 2;
+						zmazat.add(k);
 					}
 				}
 			}
-			else {
-				i++;
-			}
 		}
 		// mame vsetky, nechame ich s efektom vybuchnut
-		for (Kocka k : kocky) {
-			if (k.status == 2) {
+		try {
+			for (Kocka k : zmazat) {
 				kocky.remove(k);
+				repaint();
 			}
-			else {
+			for (Kocka k : kocky) {
 				k.speed = 1;
 			}
 		}
-		while (padniKocky())
-			;
+		catch (Exception e) {
+			debug += e;
+		}
+		cnt = 0;
+		while (padniKocky()) {
+			cnt++;
+			debug += cnt;
+			repaint();
+			if (cnt > 20) {
+				break;
+			}
+		}
 	}
 
 	private boolean posunPadajuce(int dx, int dy) {
@@ -204,6 +215,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 	}
 
 	private boolean rotujPadajuce() {
+		// XXX
 		return false;
 	}
 
