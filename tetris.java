@@ -205,7 +205,6 @@ public class tetris extends Applet implements KeyListener, ActionListener
 				}
 			}
 		}
-
 		for (Kocka k : padaju) {
 			k.x += dx;
 			k.y += dy;
@@ -234,6 +233,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 	private int nasypNoveKocky(int speed) {
 		int r = rand.nextInt(nasyp) + 1;
+		Color c = new Color(rand.nextFloat(255),rand.nextFloat(255),rand.nextFloat(255));
 		nasyp -= r;
 
 		int minx = -1;
