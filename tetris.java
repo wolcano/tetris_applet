@@ -5,6 +5,7 @@ import java.awt.event.*;
 import javax.swing.Timer;
 import java.util.Random;
 import java.util.ArrayList;
+import java.lang.Math;
 
 public class tetris extends Applet implements KeyListener, ActionListener
 {
@@ -84,7 +85,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 	private void reset() {
 		start.setVisible(true);
 		skore.setText("0");
-		level.setText("5");
+		level.setText("1");
 		tick.stop();
 		new_color = new Color(rand.nextInt(255),rand.nextInt(255), rand.nextInt(255));
 		kocky = new ArrayList<Kocka>();
@@ -101,11 +102,12 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		nasyp = kociek_na_item;
 		debug = "startGame";
 
-		/* // XXX
-		for (int i = 0; i < w - 1; i++) {
-			kocky.add(new Kocka(i, 0, 0, 0, new_color));
-		}
-		*/
+		//* // XXX
+		nasyp = 1;
+		kocky.add(new Kocka(2, h-1, 1, 0, new_color));
+		kocky.add(new Kocka(3, h-1, 1, 0, new_color));
+		kocky.add(new Kocka(4, h-1, 1, 0, new_color));
+		//*/
 		stepGame();
 		//stepGame();
 		//stopGame();
@@ -132,6 +134,17 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		}
 		return cnt;
 	}
+	
+	private boolean jeVolne(int x, int y) {
+		if (y < 0 || y >= h || x < 0 || x >= w) {
+			return false;
+		}
+		for (Kocka k : kocky) {
+			if (x == k.x && y == k.y && k.speed == 0)
+				return false;
+		}
+		return true;
+	}
 
 	private boolean maPrazdno(Kocka pk, int dx, int dy) {
 		if (pk.y + dy < 0
@@ -141,9 +154,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 			return false;
 		}
 		for (Kocka k : kocky) {
-			if ((pk.x + dx) == k.x
-					&& (pk.y + dy) == k.y
-					&& k.speed == 0)
+			if (!jeVolne(pk.x + dx, pk.y + dy))
 				return false;
 		}
 		return true;
@@ -212,10 +223,45 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 		return (cnt > 0);
 	}
+	private void rotujKocku(Kocka k, int x0, int y0) {
+		double a = k.x - x0;
+		double b = k.y - y0;
+		k.x = (int) (+a *   0  - b * (-1) + x0);
+		k.y = (int) (+a * (-1) + b *   0  + y0);
+	}
 
 	private boolean rotujPadajuce() {
-		// XXX
-		return false;
+		// zarotuje vsetky padajuce kocky v smere hodinovych ruciciek okolo
+		// prvej aktivnej kocky v zozname (povodne najspodnejsia, najlavejsia)
+		ArrayList<Kocka> padaju = new ArrayList<Kocka>();
+		for (Kocka k : kocky) {
+			if (k.speed > 0) {
+				padaju.add(k);
+			}
+		}
+		if (padaju.size() == 0) {
+			return false;
+		}
+		Kocka kk = padaju.get(0);
+		kk.color = Color.green;
+		int px = kk.x;
+		int py = kk.y;
+		int i = 0;
+		kk = new Kocka();
+		// najprv skontrolujem ci su volne vsetky pozicie
+		for (Kocka k : padaju) {
+			i++;
+			kk.x = k.x;
+			kk.y = k.y;
+			rotujKocku(kk, px, py);
+			if (!jeVolne(kk.y, kk.x)) {
+				return false;
+			}
+		}
+		for (Kocka k : padaju) {
+			rotujKocku(k, px, py);
+		}
+		return true;
 	}
 
 	private boolean padniKocky() {
@@ -356,6 +402,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 				stopGame();
 				break;
 			case ' ':
+			case 'w':
 				rotujPadajuce();
 				break;
 		}
