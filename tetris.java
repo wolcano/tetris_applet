@@ -1,6 +1,5 @@
 import java.awt.*;
 import java.applet.*;
-//import java.awt.geom.*;
 import java.awt.event.*;
 import javax.swing.Timer;
 import java.util.Random;
@@ -19,8 +18,6 @@ public class tetris extends Applet implements KeyListener, ActionListener
 	Label level;
 	Label level_d;
 	Button start;
-
-	Label dbg;
 
 	Timer tick;
 	Random rand;
@@ -43,7 +40,6 @@ public class tetris extends Applet implements KeyListener, ActionListener
 	int riadkov_na_level = 10;
 
 	char kc = ' ';
-	String debug;
 
 	public void init()
 	{
@@ -52,9 +48,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		kocky = null;
 		tick = new Timer(0, null);
 		rand = new Random();
-		debug = new String();
 
-		dbg     = new Label("debug info");
 		skore_d = new Label("SKORE");
 		skore   = new Label();
 		level_d = new Label("Level");
@@ -62,7 +56,6 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 		start   = new Button("START");
 
-		dbg.setBounds(    20,  0, 800, 20);
 		skore_d.setBounds(20, 20, 100, 20);
 		skore.setBounds(  20, 40, 100, 20);
 		level_d.setBounds(20, 60, 100, 20);
@@ -70,7 +63,6 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 		start.setBounds(cnv_x, cnv_y, cnv_w, cnv_h);
 
-		add(dbg);
 		add(skore_d);
 		add(skore);
 		add(level_d);
@@ -98,31 +90,14 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		level.setText("1");
 		tick.setDelay(2 * tick_len / Integer.parseInt(level.getText()));
 		tick.setInitialDelay(tick.getDelay());
-		//tick.setDelay(tick_len);
 		tick.start();
 		status = 1;
 		nasyp = kociek_na_item;
-		debug = "startGame";
 
-		//* // XXX
-		nasyp = 0;
-		kocky.add(new Kocka(0, 0, 1, 0, new_color));
-		kocky.add(new Kocka(1, 0, 1, 0, new_color));
-		kocky.add(new Kocka(2, 0, 1, 0, new_color));
-		kocky.add(new Kocka(3, 0, 1, 0, new_color));
-		kocky.add(new Kocka(4, 0, 1, 0, new_color));
-		kocky.add(new Kocka(6, 0, 1, 0, new_color));
-		kocky.add(new Kocka(7, 0, 1, 0, new_color));
-		kocky.add(new Kocka(8, 0, 1, 0, new_color));
-		kocky.add(new Kocka(9, 0, 1, 0, new_color));
-		//*/
 		stepGame();
-		//stepGame();
-		//stopGame();
 	}
 
 	private void stopGame() {
-		//start.setVisible(true);
 		tick.stop();
 		status = 2;
 		repaint();
@@ -377,7 +352,6 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		}
 
 		repaint();
-		//stopGame();
 	}
 
 	public void paint (Graphics gX)
@@ -391,8 +365,6 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		for (Kocka k : kocky) {
 			k.draw(g);
 		}
-
-		dbg.setText("tick! " + " k:" + pocetZijucichKociek() + "/" + kocky.size() + " " + debug);
 	}
 
 	public void keyReleased(KeyEvent evt) {
@@ -437,9 +409,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 			startGame();
 		}
 		else if (src == tick) {
-			//tick.stop();
 			stepGame();
-			//tick.start();
 		}
 	}
 
