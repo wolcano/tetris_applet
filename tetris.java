@@ -27,18 +27,20 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 	int sq_w = 10; // velkost kocky
 	int w = 10;
-	int h = 10;
+	int h = 40;
 	int cnv_x = 140;
 	int cnv_y = 40;
 	int cnv_h = sq_w * h; // vyska hracej plochy
 	int cnv_w = sq_w * w; // sirka hracej plochy
 	Color new_color;
 	int nasyp = 0;
-	int status = 0; // stav behu 0 - STOP; 1 - RUN
+	int status = 0; // stav behu 0 - READY; 1 - RUN; 2 - FINISHED
+	int riadkov = 0;
 
 	int tick_len = 1000;
 	int kociek_na_item = 4;
 	boolean suvisle_kocky = true;
+	int riadkov_na_level = 10;
 
 	char kc = ' ';
 	String debug;
@@ -84,16 +86,16 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 	private void reset() {
 		start.setVisible(true);
-		skore.setText("0");
-		level.setText("1");
 		tick.stop();
 		new_color = new Color(rand.nextInt(255),rand.nextInt(255), rand.nextInt(255));
 		kocky = new ArrayList<Kocka>();
 	}
 
 	private void startGame() {
-		start.setVisible(false);
 		tick.stop();
+		start.setVisible(false);
+		skore.setText("0");
+		level.setText("1");
 		tick.setDelay(2 * tick_len / Integer.parseInt(level.getText()));
 		tick.setInitialDelay(tick.getDelay());
 		//tick.setDelay(tick_len);
@@ -103,10 +105,16 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		debug = "startGame";
 
 		//* // XXX
-		nasyp = 1;
-		kocky.add(new Kocka(2, h-1, 1, 0, new_color));
-		kocky.add(new Kocka(3, h-1, 1, 0, new_color));
-		kocky.add(new Kocka(4, h-1, 1, 0, new_color));
+		nasyp = 0;
+		kocky.add(new Kocka(0, 0, 1, 0, new_color));
+		kocky.add(new Kocka(1, 0, 1, 0, new_color));
+		kocky.add(new Kocka(2, 0, 1, 0, new_color));
+		kocky.add(new Kocka(3, 0, 1, 0, new_color));
+		kocky.add(new Kocka(4, 0, 1, 0, new_color));
+		kocky.add(new Kocka(6, 0, 1, 0, new_color));
+		kocky.add(new Kocka(7, 0, 1, 0, new_color));
+		kocky.add(new Kocka(8, 0, 1, 0, new_color));
+		kocky.add(new Kocka(9, 0, 1, 0, new_color));
 		//*/
 		stepGame();
 		//stepGame();
@@ -172,6 +180,12 @@ public class tetris extends Applet implements KeyListener, ActionListener
 				}
 			}
 			if (cnt == w) {
+				skore.setText(Integer.toString(Integer.parseInt(skore.getText()) + Integer.parseInt(level.getText())));
+				riadkov++;
+				if (riadkov > riadkov_na_level) {
+					riadkov = 0;
+					level.setText(Integer.toString(1 + Integer.parseInt(level.getText())));
+				}
 				if (i < minh) {
 					minh = i;
 				}
@@ -230,6 +244,9 @@ public class tetris extends Applet implements KeyListener, ActionListener
 	private boolean rotujPadajuce() {
 		// zarotuje vsetky padajuce kocky v smere hodinovych ruciciek okolo
 		// prvej aktivnej kocky v zozname (povodne najspodnejsia, najlavejsia)
+		if (nasyp > 0) {
+			return false;
+		}
 		ArrayList<Kocka> padaju = new ArrayList<Kocka>();
 		for (Kocka k : kocky) {
 			if (k.speed > 0) {
@@ -240,7 +257,6 @@ public class tetris extends Applet implements KeyListener, ActionListener
 			return false;
 		}
 		Kocka kk = padaju.get(0);
-		kk.color = Color.green;
 		int px = kk.x;
 		int py = kk.y;
 		int i = 0;
@@ -251,11 +267,12 @@ public class tetris extends Applet implements KeyListener, ActionListener
 			kk.x = k.x;
 			kk.y = k.y;
 			rotujKocku(kk, px, py);
-			if (!jeVolne(kk.y, kk.x)) {
+			if (!jeVolne(kk.x, kk.y)) {
 				return false;
 			}
 		}
 		for (Kocka k : padaju) {
+			//kocky.add(new Kocka(k.x, k.y, 0, 0, Color.red));
 			rotujKocku(k, px, py);
 		}
 		return true;
@@ -276,7 +293,6 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 	private int nasypNoveKocky(int speed) {
 		int r = rand.nextInt(nasyp) + 1;
-		nasyp -= r;
 
 		int minx = -1;
 		int maxx = -1;
@@ -326,6 +342,10 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		// nasypavam r-suvisly blok kociek tak aby sa dotykal bloku [minx..maxx]
 		for (int i = 0; i < r; i++) {
 			kocky.add(new Kocka(rr + i, h, speed, 1, new_color));
+			if (nasyp == kociek_na_item) {
+				new_color = new_color.brighter();
+			}
+			nasyp--;
 		}
 
 		return r;
@@ -362,6 +382,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 	public void paint (Graphics gX)
 	{
+		super.paint(gX);
 		Graphics2D g = (Graphics2D) gX;
 
 		g.setColor (Color.red);
