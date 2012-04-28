@@ -162,6 +162,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 
 	private void vybuchniRiadky() {
 		int cnt;
+		int minh = h;
 		ArrayList<Kocka> zmazat = new ArrayList<Kocka>();
 		for (int i = 0; i < h; i++) {
 			cnt = 0;
@@ -171,6 +172,9 @@ public class tetris extends Applet implements KeyListener, ActionListener
 				}
 			}
 			if (cnt == w) {
+				if (i < minh) {
+					minh = i;
+				}
 				for (Kocka k : kocky) {
 					if (k.y == i) {
 						zmazat.add(k);
@@ -178,27 +182,20 @@ public class tetris extends Applet implements KeyListener, ActionListener
 				}
 			}
 		}
-		// mame vsetky, nechame ich s efektom vybuchnut
-		try {
+		// mame riadky, nechame ich po jednom s efektom vybuchnut
+		for (int i = minh; i < h; i++) {
 			for (Kocka k : zmazat) {
 				kocky.remove(k);
 				repaint();
 			}
 			for (Kocka k : kocky) {
-				k.speed = 1;
+				if (k.y >= i) {
+					k.speed = 1;
+				}
 			}
-		}
-		catch (Exception e) {
-			debug += e;
-		}
-		cnt = 0;
-		while (padniKocky()) {
-			cnt++;
-			debug += cnt;
+			cnt = 0;
+			padniKocky();
 			repaint();
-			if (cnt > 20) {
-				break;
-			}
 		}
 	}
 
