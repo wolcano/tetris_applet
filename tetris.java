@@ -4,7 +4,6 @@ import java.awt.event.*;
 import javax.swing.Timer;
 import java.util.Random;
 import java.util.ArrayList;
-import java.lang.Math;
 
 public class tetris extends Applet implements KeyListener, ActionListener
 {
@@ -129,20 +128,6 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		return true;
 	}
 
-	private boolean maPrazdno(Kocka pk, int dx, int dy) {
-		if (pk.y + dy < 0
-				|| pk.y + dy >= h
-				|| pk.x + dx < 0
-				|| pk.x + dx >= w) {
-			return false;
-		}
-		for (Kocka k : kocky) {
-			if (!jeVolne(pk.x + dx, pk.y + dy))
-				return false;
-		}
-		return true;
-	}
-
 	private void vybuchniRiadky() {
 		int cnt;
 		int minh = h;
@@ -193,7 +178,7 @@ public class tetris extends Applet implements KeyListener, ActionListener
 		ArrayList<Kocka> padaju = new ArrayList<Kocka>();
 		for (Kocka k : kocky) {
 			if (jePadajuca(k)) {
-				if (maPrazdno(k, dx, dy)) {
+				if (jeVolne(k.x + dx, k.y + dy)) {
 					padaju.add(k);
 					cnt++;
 				}
